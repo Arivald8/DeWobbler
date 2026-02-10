@@ -1,3 +1,5 @@
+
+
 import asyncio
 import logging
 import socket
@@ -19,3 +21,28 @@ class DebugSession:
         self.server: Optional[asyncio.Server] = None
         self.port: int = 0
         self.connected_event = asyncio.Event()
+
+    async def start_server(self):
+        """Start a one-time TCP server waiting for target process to call home."""
+        self.server = await asyncio.start_server(
+            self.handle_process_connection, "127.0.0.1", 0
+        )
+        addr = self.server.sockets[0].getsocketname()
+        self.port = addr[1]
+        logger.info(f"Debug server for PID {self.pid}. Port: {self.port}")
+
+    async def stop(self):
+        if self.process_writer:
+            self.process_writer.close()
+        if self.server:
+            self.server.close()
+            await self.server.wait_closed()
+
+
+# Global singleton to hold active sessions. Maybe Redis in the future
+active_sessions: Dict[int, DebugSession] = {}
+
+def get_session(pid: int) -> DebugSession:
+    if pid not in active_sessions:
+        active_sessions[pid] = DebugSession(pid)
+    return active_sessions[pid]
