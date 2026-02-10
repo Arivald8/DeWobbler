@@ -7,7 +7,7 @@ import logging
 router = APIRouter()
 logger = logging.getLogger("uvicorn")
 
-@router.websocker("/ws/attach/{pid}")
+@router.websocket("/ws/attach/{pid}")
 async def websocket_debugger(websocket: WebSocket, pid: int):
     await websocket.accept()
 
