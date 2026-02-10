@@ -36,7 +36,8 @@ def _remote_debug_client(host, port):
                         # or check if var we want exists (just for this specific one)
                         # grab the frame below the top if inside a library call
                         if frame.f_code.co_filename.endswith("tester.py"):
-                            target_locals = frame.f_locals
+                            # MUST convert from FrameLocalsProxy to standard dict
+                            target_locals = dict(frame.f_locals) # See PEP 667
                             print(f"Context switched to Main Thread (Frame: {{frame.f_code.co_name}})")
                             break
                         frame = frame.f_back
