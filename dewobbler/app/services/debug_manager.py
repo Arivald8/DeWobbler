@@ -38,6 +38,23 @@ class DebugSession:
             self.server.close()
             await self.server.wait_closed()
 
+    async def handle_process_connection(self, reader, writer):
+        """Called when the target process connects back."""
+        if self.process_writer:
+            logger.warning(f"Duplicate connection attempt for PID {self.pid}")
+            writer.close()
+            return
+        
+        logger.info(f"Target PID {self.pid} connected successfully.")
+        self.process_reader = reader
+        self.process_writer = writer
+        self.connected_event.set()
+
+        # Background loop to pump stdout from process -> browser
+        asyncio.create_task()  # TODO: Need a method to read stdout/stderr from process and send to the browser.
+
+    
+
 
 # Global singleton to hold active sessions. Maybe Redis in the future
 active_sessions: Dict[int, DebugSession] = {}
