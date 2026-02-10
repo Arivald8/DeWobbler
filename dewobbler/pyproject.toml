@@ -1,7 +1,7 @@
 [project]
 name = "dewobbler"
 version = "0.1.0"
-description = "Add your description here"
+description = "Attach to a running python process"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
