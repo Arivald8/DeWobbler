@@ -51,9 +51,22 @@ class DebugSession:
         self.connected_event.set()
 
         # Background loop to pump stdout from process -> browser
-        asyncio.create_task()  # TODO: Need a method to read stdout/stderr from process and send to the browser.
+        asyncio.create_task(self.pump_output())
 
-    
+    async def pump_output(self):
+        """Reads stdout/stderr from the process and sends it to the browser."""
+        try:
+            while True:
+                data = await self.process_reader.read(4096)
+                if not data:
+                    break
+                if self.browser_ws:
+                    # Send txt to browser terminal
+                    await self.browser_ws.send_text(data.decode("utf-8", errors="replace"))
+        except Exception as e:
+            logger.error(f"Error pumping output for PID {self.pid}: {e}")
+        finally:
+            logger.info(f"Connection from PID {self.pid} closed.")
 
 
 # Global singleton to hold active sessions. Maybe Redis in the future
