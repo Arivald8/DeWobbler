@@ -30,6 +30,12 @@ The backend bridges this TCP connection to a WebSocket in the browser. This crea
 
     Tailwind CSS: Provides the styling for the web-based terminal interface.
 
+    Other Deps: 
+        pydantic-settings
+        uvicorn[standard]
+        jinja2
+        psutil
+
 ### Limitations
 
 The current implementation captures a snapshot of the target process's local variables by converting the FrameLocalsProxy to a standard dictionary. This allows you to read and inspect variables effectively. However, due to the nature of this snapshot, modifying a variable in the debugger console (e.g., x = 10) will not update the variable in the actual running process.
