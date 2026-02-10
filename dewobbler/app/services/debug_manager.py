@@ -2,7 +2,6 @@
 
 import asyncio
 import logging
-import socket
 from typing import Dict, Optional
 
 logger = logging.getLogger("uvicorn")
