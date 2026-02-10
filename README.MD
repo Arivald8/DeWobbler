@@ -12,13 +12,13 @@ Instead of using pdb directly, DeWobbler constructs a bridge between a web-based
 
 The application functions using a reverse-connection architecture managed by a FastAPI backend. When a user attempts to attach to a process, the system performs the following steps:
 
-    Listener Initialization: The application opens a temporary TCP server on a random port to listen for incoming connections from the target.
+The app opens a temporary TCP server on a random port to listen for incoming connections from the target.
 
-    Payload Injection: A Python bootstrap script is generated and injected into the target process using sys.remote_exec. This function allows the interpreter to execute arbitrary code within the target's memory space.
+A Python bootstrap script is generated and injected into the target process using sys.remote_exec. This function allows the interpreter to execute arbitrary code within the target's memory space.
 
-    Reverse Connection: The injected code runs inside the target process. It locates the main thread, captures the current stack frame to access local variables, and connects back to the DeWobbler TCP server.
+The injected code runs inside the target process, locates the main thread, captures the current stack frame to access local variables, and connects back to the DeWobbler TCP server.
 
-    Interactive Session: The backend bridges this TCP connection to a WebSocket in the browser. This creates a live REPL (Read-Eval-Print Loop) where the user can type commands in the web terminal and receive output from the remote process in real-time.
+The backend bridges this TCP connection to a WebSocket in the browser. This creates a live REPL (Read-Eval-Print Loop) where the user can type commands in the web terminal and receive output from the remote process in real-time.
 
 ### Tech Stack
 
@@ -39,15 +39,23 @@ Additionally, as mentioned in [the offical docs for sys_remote_exec](https://doc
 
 ### Usage
 
-Must be running Python 3.14.3 or higher.
+Project relies on uv for dependency management and execution.
+
+Ensure you have a **Python 3.14.3+** interpreter available on your system, both for the web server file and for your target process.
+
+#### Installation
+
+Clone the repository and install deps:
+
+    uv sync
 
 Start the web server:
 
     uv run uvicorn app.main:app --reload --port 8000
 
-Start a dummy target process (included as tester.py) in a separate terminal:
+Start a dummy target process in a separate terminal (included as tester.py in test_process directory):
 
-    py -3.14 tester.py
+    uv run python tester.py
 
 Navigate to http://127.0.0.1:8000/ in your browser and click on "View all processes":
 
