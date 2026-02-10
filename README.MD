@@ -1,18 +1,74 @@
 > _Dewobbler (n.): A tool designed to identify, correct, or eliminate instability, errors, or erratic behavior ("wobbles") within a system._
 
-Dev notes:
+# DeWobbler
 
-On sys.remote_exec (https://docs.python.org/3/library/sys.html#sys.remote_exec)
+DeWobbler is a very simple tool designed to explore the remote attachment capabilities introduced in Python 3.14.3 --> [Release Notes](https://www.python.org/downloads/release/python-3143/).
 
-The code is executed by the target process's main thread.
+It's just a practical demonstration of PEP 768, specifically utilising the new sys.remote_exec function to inject code into a running Python process without terminating it.
 
-The caller must make sure that the file exists whenever the remote process tries to read it.
+Instead of using pdb directly, DeWobbler constructs a bridge between a web-based terminal and a target process to visualize the mechanics of code injection and state inspection.
 
-The remote process MUST be running a CPython interpreter of the same major and minor version as the local process, including pre-release versions.
+## How It Works
 
-When the code is executes in the remote process, an auditing event sys.remove_exec is raised with the pid and the path to the scrip file. This event is raised in the 
-process that called sys.remote.exec()
+The application functions using a reverse-connection architecture managed by a FastAPI backend. When a user attempts to attach to a process, the system performs the following steps:
 
-When the script is executed in the remote process, an auditing event cpython.remote_debugger_script is raised with the path in the remote process.
+    Listener Initialization: The application opens a temporary TCP server on a random port to listen for incoming connections from the target.
+
+    Payload Injection: A Python bootstrap script is generated and injected into the target process using sys.remote_exec. This function allows the interpreter to execute arbitrary code within the target's memory space.
+
+    Reverse Connection: The injected code runs inside the target process. It locates the main thread, captures the current stack frame to access local variables, and connects back to the DeWobbler TCP server.
+
+    Interactive Session: The backend bridges this TCP connection to a WebSocket in the browser. This creates a live REPL (Read-Eval-Print Loop) where the user can type commands in the web terminal and receive output from the remote process in real-time.
+
+### Tech Stack
+
+    Python 3.14.3+: Required for sys.remote_exec.
+
+    FastAPI: Handles the HTTP serving and WebSocket management.
+
+    HTMX: Powers the frontend interactivity and WebSocket connections without complex JavaScript frameworks.
+
+    Tailwind CSS: Provides the styling for the web-based terminal interface.
+
+### Limitations
+
+The current implementation captures a snapshot of the target process's local variables by converting the FrameLocalsProxy to a standard dictionary. This allows you to read and inspect variables effectively. However, due to the nature of this snapshot, modifying a variable in the debugger console (e.g., x = 10) will not update the variable in the actual running process.
+
+Additionally, as mentioned in [the offical docs for sys_remote_exec](https://docs.python.org/3/library/sys.html#sys.remote_exec), the target process MUST be running a CPython interpreter **of the same major AND minor version** as the local process
 
 
+### Usage
+
+Must be running Python 3.14.3 or higher.
+
+Start the web server:
+
+    uv run uvicorn app.main:app --reload --port 8000
+
+Start a dummy target process (included as tester.py) in a separate terminal:
+
+    py -3.14 tester.py
+
+Navigate to http://127.0.0.1:8000/ in your browser and click on "View all processes":
+
+![alt text](images/image.png)
+
+Locate the target process in the list and click "Debug" to open the interactive session:
+
+![alt text](images/image-1.png)
+
+This will open a new browser window with a terminal session:
+
+![alt text](images/image-2.png)
+
+For example, we define tester.py with a secret_status var:
+
+![alt text](images/image-3.png)
+
+We can access it using the remote debugger:
+
+![alt text](images/image-4.png)
+
+Results in:
+
+![alt text](images/image-5.png)
