@@ -68,6 +68,16 @@ class DebugSession:
         finally:
             logger.info(f"Connection from PID {self.pid} closed.")
 
+    async def send_command(self, cmd: str):
+        """Sends python cmd from the browser to the target process."""
+        if not self.process_writer:
+            if self.browser_ws:
+                await self.browser_ws.send_text(">> Error: Target not connected yet.\n")
+            return
+        
+        # Write cmd + newline so the REPL loop processes it
+        self.process_writer.write(f"{cmd}\n".encode("utf-8"))
+        await self.process_writer.drain()
 
 # Global singleton to hold active sessions. Maybe Redis in the future
 active_sessions: Dict[int, DebugSession] = {}
