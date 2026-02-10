@@ -3,6 +3,7 @@ from app.services.debug_manager import get_session
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 import asyncio
 import logging
+import json
 
 router = APIRouter()
 logger = logging.getLogger("uvicorn")
@@ -18,23 +19,33 @@ async def websocket_debugger(websocket: WebSocket, pid: int):
     success = await injector.attach()
 
     if not success:
-        await websocket.send_text("Error: Failed to inject debugger script.\n")
+        # Send error as OOB HTML so it appears in the terminal
+        err = '<div id="terminal-output" hx-swap-oob="beforeend" class="text-red-500">Error: Failed to inject debugger script.</div>'
+        await websocket.send_text(err)
         await websocket.close()
         return
     
-    await websocket.send_text(f"Waiting for PID {pid} to connect back...\n")
+    # Send a waiting message
+    msg = '<div id="terminal-output" hx-swap-oob="beforeend" class="text-gray-500">Waiting for PID connection...</div>'
+    await websocket.send_text(msg)
 
     try:
         # Wait for the process to phone home (5s timeout)
         try:
             await asyncio.wait_for(session.connected_event.wait(), timeout=5.0)
         except asyncio.TimeoutError:
-            await websocket.send_text("Error: Times out waiting for process response.\n")
-            
+            err = '<div id="terminal-output" hx-swap-oob="beforeend" class="text-red-500">Error: Timed out waiting for process response.</div>'
+            await websocket.send_text(err)
+
         while True:
-            data = await websocket.receive_text() # from browser
-            # Forwarded to target process via TCP bridge
-            await session.send_command(data)
+            raw_data = await websocket.receive_text()
+            try:
+                payload = json.loads(raw_data)
+                command = payload.get("command", "")
+                await session.send_command(command)
+            except json.JSONDecodeError:
+                # fallback if raw text is sent
+                await session.send_command(raw_data)
 
     except WebSocketDisconnect:
         logger.info(f"Browser disconnected from session {pid}")

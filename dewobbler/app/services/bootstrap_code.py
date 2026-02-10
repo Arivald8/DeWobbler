@@ -3,7 +3,7 @@ def get_bootstrap_code(session_port):
     This script runs INSIDE the target process.
     It connects back to FastAPI server and starts a read/exec loop.
     """
-    return """
+    return f"""
 import sys
 import socket
 import threading
@@ -37,7 +37,7 @@ def _remote_debug_client(host, port):
                         # removing trailing newline for push
                         console.push(line.rstrip('\\n'))
                     except Exception as ex:
-                        print(f"REPL Error: {{ex}}")
+                        print(f"REPL Error")
                         break
             
             s.close()

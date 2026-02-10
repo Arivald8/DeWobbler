@@ -1,5 +1,6 @@
 
 
+import html
 import asyncio
 import logging
 from typing import Dict, Optional
@@ -26,7 +27,7 @@ class DebugSession:
         self.server = await asyncio.start_server(
             self.handle_process_connection, "127.0.0.1", 0
         )
-        addr = self.server.sockets[0].getsocketname()
+        addr = self.server.sockets[0].getsockname()
         self.port = addr[1]
         logger.info(f"Debug server for PID {self.pid}. Port: {self.port}")
 
@@ -59,9 +60,17 @@ class DebugSession:
                 data = await self.process_reader.read(4096)
                 if not data:
                     break
+
                 if self.browser_ws:
-                    # Send txt to browser terminal
-                    await self.browser_ws.send_text(data.decode("utf-8", errors="replace"))
+                    text_data = data.decode("utf-8", errors="replace")
+                    safe_text = html.escape(text_data)
+
+                    # Wrapping in an out of band swap for htmx
+                    # taget="#terminal-output" tells htmx where to put it.
+                    # hx-swap-oob="beforeend" tells it to append.
+                    message = f'<div id="terminal-output" hx-swap-oob="beforeend">{safe_text}</div>'
+                    await self.browser_ws.send_text(message)
+                    
         except Exception as e:
             logger.error(f"Error pumping output for PID {self.pid}: {e}")
         finally:
