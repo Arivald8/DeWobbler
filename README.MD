@@ -23,18 +23,13 @@ The backend bridges this TCP connection to a WebSocket in the browser. This crea
 ### Tech Stack
 
     Python 3.14.3+: Required for sys.remote_exec.
-
-    FastAPI: Handles the HTTP serving and WebSocket management.
-
-    HTMX: Powers the frontend interactivity and WebSocket connections without complex JavaScript frameworks.
-
-    Tailwind CSS: Provides the styling for the web-based terminal interface.
-
-    Other Deps: 
-        pydantic-settings
-        uvicorn[standard]
-        jinja2
-        psutil
+    FastAPI
+    HTMX
+    TailwindCSS
+    pydantic-settings
+    uvicorn[standard]
+    jinja2
+    psutil
 
 ### Limitations
 
